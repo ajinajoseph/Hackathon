@@ -2,8 +2,16 @@ import os
 import json
 from typing import List
 from ..schemas import InsightResponse
-import openai
-import google.generativeai as genai
+try:
+    import openai
+except ImportError:
+    openai = None
+
+try:
+    import google.generativeai as genai
+except ImportError:
+    genai = None
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -13,10 +21,14 @@ class AIService:
         self.openai_api_key = os.getenv("OPENAI_API_KEY")
         self.gemini_api_key = os.getenv("GEMINI_API_KEY")
         
-        if self.openai_api_key:
+        if self.openai_api_key and openai:
             openai.api_key = self.openai_api_key
-        if self.gemini_api_key:
-            genai.configure(api_key=self.gemini_api_key)
+        if self.gemini_api_key and genai:
+            try:
+                genai.configure(api_key=self.gemini_api_key)
+            except Exception as e:
+                print(f"Gemini Config Error: {e}")
+                genai = None
 
     async def get_insights(self, expenses_data: List[dict]) -> List[InsightResponse]:
         """
@@ -34,7 +46,7 @@ class AIService:
         """
 
         # Try OpenAI
-        if self.openai_api_key:
+        if self.openai_api_key and openai:
             try:
                 response = await openai.ChatCompletion.acreate(
                     model="gpt-3.5-turbo",
@@ -45,7 +57,7 @@ class AIService:
                 print(f"OpenAI Error: {e}")
 
         # Try Gemini
-        if self.gemini_api_key:
+        if self.gemini_api_key and genai:
             try:
                 model = genai.GenerativeModel('gemini-pro')
                 response = model.generate_content(prompt)

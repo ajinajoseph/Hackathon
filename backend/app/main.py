@@ -3,14 +3,21 @@ from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, Base
 from .routers import expenses, analytics, insights
 
-# Create database tables
-Base.metadata.create_all(bind=engine)
+# Create database tables moved to startup event
+# Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Financially API",
     description="Production-ready backend for personal finance management",
     version="1.0.0"
 )
+
+@app.on_event("startup")
+def startup_event():
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        print(f"Database creation error: {e}")
 
 # CORS configuration
 origins = [
