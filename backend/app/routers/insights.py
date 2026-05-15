@@ -1,19 +1,17 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from typing import List
-from ..database import get_db
+from flask import Blueprint, jsonify
+from ..database import SessionLocal
 from ..models import Expense
 from ..services.ai_service import ai_service
 from ..schemas import InsightResponse
+import asyncio
 
-router = APIRouter(prefix="/insights", tags=["insights"])
+router = Blueprint("insights", __name__, url_prefix="/insights")
 
-@router.get("/", response_model=List[InsightResponse])
-async def get_ai_insights(db: Session = Depends(get_db)):
-    # Fetch recent expenses to analyze
+@router.route("/", methods=["GET"])
+def get_ai_insights():
+    db = SessionLocal()
     expenses = db.query(Expense).order_by(Expense.date.desc()).limit(50).all()
     
-    # Convert to list of dicts for AI service
     expenses_data = [
         {
             "amount": e.amount,
@@ -23,5 +21,12 @@ async def get_ai_insights(db: Session = Depends(get_db)):
         } for e in expenses
     ]
     
-    insights = await ai_service.get_insights(expenses_data)
-    return insights
+    # Flask is synchronous by default, so we run the async AI service in an event loop
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    insights = loop.run_until_complete(ai_service.get_insights(expenses_data))
+    loop.close()
+    
+    result = [i.dict() if hasattr(i, 'dict') else i for i in insights]
+    db.close()
+    return jsonify(result)

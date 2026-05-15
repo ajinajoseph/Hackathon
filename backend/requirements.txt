@@ -1,8 +1,9 @@
-fastapi
-uvicorn
+Flask
+flask-cors
 sqlalchemy
 pydantic
 pydantic-settings
 python-dotenv
 openai
 google-generativeai
+gunicorn

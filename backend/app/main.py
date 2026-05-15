@@ -1,52 +1,41 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from flask import Flask, jsonify
+from flask_cors import CORS
+import os
 from .database import engine, Base
 from .routers import expenses, analytics, insights
 
-# Create database tables moved to startup event
-# Base.metadata.create_all(bind=engine)
+def create_app():
+    app = Flask(__name__)
+    
+    # Enable CORS
+    CORS(app, resources={r"/*": {"origins": [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000"
+    ]}})
 
-app = FastAPI(
-    title="Financially API",
-    description="Production-ready backend for personal finance management",
-    version="1.0.0"
-)
+    # Create database tables
+    with app.app_context():
+        try:
+            Base.metadata.create_all(bind=engine)
+        except Exception as e:
+            print(f"Database creation error: {e}")
 
-@app.on_event("startup")
-def startup_event():
-    try:
-        Base.metadata.create_all(bind=engine)
-    except Exception as e:
-        print(f"Database creation error: {e}")
+    # Register blueprints
+    app.register_blueprint(expenses.router)
+    app.register_blueprint(analytics.router)
+    app.register_blueprint(insights.router)
 
-# CORS configuration
-origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:3000",
-]
+    @app.route("/")
+    def root():
+        return jsonify({
+            "message": "Welcome to Financially API (Flask)",
+            "status": "running"
+        })
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+    return app
 
-# Register routers
-app.include_router(expenses.router)
-app.include_router(analytics.router)
-app.include_router(insights.router)
-
-@app.get("/")
-async def root():
-    return {
-        "message": "Welcome to Financially API",
-        "docs": "/docs",
-        "status": "running"
-    }
+app = create_app()
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    app.run(host="0.0.0.0", port=8000, debug=True)
