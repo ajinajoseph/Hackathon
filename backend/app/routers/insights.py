@@ -7,6 +7,7 @@ import asyncio
 
 router = Blueprint("insights", __name__, url_prefix="/insights")
 
+@router.route("", methods=["GET"])
 @router.route("/", methods=["GET"])
 def get_ai_insights():
     db = SessionLocal()

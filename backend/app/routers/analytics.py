@@ -7,6 +7,7 @@ from ..schemas import AnalyticsSummary, CategoryBreakdown, MonthlyTrend
 
 router = Blueprint("analytics", __name__, url_prefix="/analytics")
 
+@router.route("", methods=["GET"])
 @router.route("/", methods=["GET"])
 @router.route("/summary", methods=["GET"])
 def get_summary():

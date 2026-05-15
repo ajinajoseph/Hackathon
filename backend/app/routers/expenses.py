@@ -15,6 +15,7 @@ def get_db():
     finally:
         pass # Session closing handled at request teardown or manually
 
+@router.route("", methods=["GET"])
 @router.route("/", methods=["GET"])
 def read_expenses():
     db = SessionLocal()
@@ -36,6 +37,7 @@ def read_expenses():
     db.close()
     return jsonify(result)
 
+@router.route("", methods=["POST"])
 @router.route("/", methods=["POST"])
 def create_expense():
     db = SessionLocal()

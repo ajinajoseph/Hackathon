@@ -1,8 +1,9 @@
 import axios from 'axios';
 
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 
-           (window.location.hostname === 'localhost' ? 'http://localhost:8000/' : '/_/backend/'),
+           (isLocal ? 'http://localhost:8000/' : `${window.location.origin}/_/backend/`),
   timeout: 8000,
 });
 
