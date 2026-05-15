@@ -6,7 +6,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./finance.db")
+# Vercel has a read-only filesystem, only /tmp is writable.
+if os.getenv("VERCEL"):
+    SQLALCHEMY_DATABASE_URL = "sqlite:////tmp/finance.db"
+else:
+    SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./finance.db")
 
 # check_same_thread=False is needed only for SQLite
 engine = create_engine(
